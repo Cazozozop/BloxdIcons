@@ -55,7 +55,7 @@
     const exceptions = ["bed", "glass", "trapdoor", "door", "lava", "water", "ice"];
 
     // Fonction pour télécharger et extraire le .zip
-    fetch("https://raw.githubusercontent.com/ton-nom-de-compte/ton-repository/branche/textures.zip")
+    fetch("https://github.com/Cazozozop/BloxdIcons/raw/main/textures.zip")
       .then(res => res.arrayBuffer())
       .then(buffer => JSZip.loadAsync(buffer))  // Décompression du fichier
       .then(zip => {
