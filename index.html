@@ -3,31 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bloc 3D Isométrique</title>
+  <title>Render Bloc 3D</title>
   <style>
     body {
       background-color: #3D4B79;
       font-family: Arial, sans-serif;
       display: flex;
-      flex-direction: column;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       min-height: 100vh;
       margin: 0;
     }
 
-    h1 {
-      color: white;
-    }
-
     #blockContainer {
-      position: relative;
       width: 150px;
       height: 150px;
+      position: relative;
       transform-style: preserve-3d;
       transform: rotateX(-30deg) rotateY(30deg);
       cursor: pointer;
-      margin-top: 30px;
     }
 
     .cube-face {
@@ -35,9 +29,9 @@
       width: 150px;
       height: 150px;
       background-color: transparent;
-      border: 2px solid black;
       background-size: cover;
       background-position: center;
+      border: 5px solid black; /* Contour noir épais */
     }
 
     .front  { transform: translateZ(75px); }
@@ -50,23 +44,12 @@
     #fileInput {
       display: none;
     }
-
-    .message {
-      color: white;
-      font-size: 16px;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-    }
   </style>
 </head>
 <body>
-  <h1>Importez et Téléchargez le Rendu du Bloc 3D Isométrique</h1>
-  
-  <!-- Bloc 3D isométrique cliquable pour importer une image -->
+
   <div id="blockContainer">
-    <div class="cube-face front"><div class="message">Cliquez pour importer</div></div>
+    <div class="cube-face front"></div>
     <div class="cube-face back"></div>
     <div class="cube-face right"></div>
     <div class="cube-face left"></div>
@@ -79,10 +62,9 @@
     const blockContainer = document.getElementById("blockContainer");
     const fileInput = document.getElementById("fileInput");
     const faces = document.querySelectorAll(".cube-face");
-    const messageDiv = document.querySelector(".message");
 
-    let imageLoaded = false;
     let imgUrl = null;
+    let imageLoaded = false;
 
     // Fonction pour charger l'image sélectionnée
     fileInput.addEventListener("change", (event) => {
@@ -98,9 +80,6 @@
             faces.forEach((face) => {
               face.style.backgroundImage = `url(${imgUrl})`;
             });
-
-            // Effacer le message
-            messageDiv.textContent = "Cliquez pour télécharger le rendu!";
             imageLoaded = true;
           };
         };
@@ -108,7 +87,7 @@
       }
     });
 
-    // Fonction pour télécharger le rendu du cube en 1080x1080
+    // Fonction pour télécharger le rendu du cube
     blockContainer.addEventListener("click", () => {
       if (imageLoaded) {
         downloadImage();
@@ -124,28 +103,25 @@
       canvas.width = 1080;
       canvas.height = 1080;
 
-      // Créer une image du cube isométrique
+      // Créer une vue isométrique du cube
       const img = new Image();
       img.onload = () => {
-        // Créer une vue isométrique symétrique avec la texture
+        // Créer une vue isométrique simple
         ctx.save();
         ctx.translate(canvas.width / 2, canvas.height / 2);
         ctx.scale(0.6, 0.6);
 
-        // Rotation isométrique correcte
-        ctx.rotate(Math.PI / 4); // Rotation pour l'effet isométrique
-
-        // Appliquer l'image sur les trois faces visibles du cube
-        ctx.drawImage(img, -75, -75, 150, 150); // Avant
-        ctx.drawImage(img, -75, -75, 150, 150); // Haut
-        ctx.drawImage(img, -75, -75, 150, 150); // Droite
+        // Appliquer l'image sur chaque face
+        ctx.drawImage(img, -75, -75, 150, 150); // Face avant
+        ctx.drawImage(img, -75, -75, 150, 150); // Face haut
+        ctx.drawImage(img, -75, -75, 150, 150); // Face droite
 
         ctx.restore();
 
         // Créer un lien pour télécharger l'image
         const link = document.createElement("a");
         link.href = canvas.toDataURL("image/png");
-        link.download = "render_cube_isometric.png";
+        link.download = "render_cube.png";
         link.click();
       };
 
