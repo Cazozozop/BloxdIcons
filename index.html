@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Textures Bloxd.io</title>
+  <title>Import et Export Image</title>
   <style>
     body {
       background-color: #3D4B79;
@@ -15,80 +15,72 @@
     }
 
     #blockContainer {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 10px;
+      width: 150px;
+      height: 150px;
+      background-color: transparent;
+      border: 2px solid black;
       margin-top: 30px;
-      width: 100%;
-      justify-items: center;
-    }
-
-    .BlockItem {
-      width: 100px;
-      height: 100px;
-      background-size: cover;
-      background-position: center;
-      transform: translateZ(100px) rotateX(80deg) rotate(45deg);
-      transform-style: preserve-3d;
       position: relative;
-      padding-bottom: 100%; /* Pour garder un ratio carré */
-      outline: 2px solid transparent; /* Par défaut sans bordure */
-    }
-
-    .BlockItem:hover {
       cursor: pointer;
     }
 
-    /* Si le bloc contient des textures spéciales (glass, lava, etc.), on n'ajoute pas de bordure */
-    .no-border {
-      outline: none;
+    .hidden-input {
+      display: none;
     }
 
+    .message {
+      color: white;
+      font-size: 16px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
   </style>
 </head>
 <body>
-  <h1>Textures Bloxd.io</h1>
-  <div id="blockContainer"></div>
+  <h1>Importer et Télécharger une Image</h1>
+  
+  <!-- Bloc cliquable pour importer une image -->
+  <div id="blockContainer">
+    <div class="message">Cliquez pour importer</div>
+    <input type="file" class="hidden-input" id="fileInput" accept="image/*">
+  </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script>
-    const exceptions = ["bed", "glass", "trapdoor", "door", "lava", "water", "ice"];
+    const blockContainer = document.getElementById("blockContainer");
+    const fileInput = document.getElementById("fileInput");
+    const messageDiv = document.querySelector(".message");
 
-    // Fonction pour télécharger et extraire le .zip
-    fetch("https://github.com/Cazozozop/BloxdIcons/raw/main/textures.zip")
-      .then(res => res.arrayBuffer())
-      .then(buffer => JSZip.loadAsync(buffer))  // Décompression du fichier
-      .then(zip => {
-        Object.keys(zip.files).forEach(filename => {
-          if (filename.endsWith('.png')) {
-            zip.files[filename].async('blob').then(blob => {
-              const url = URL.createObjectURL(blob);
+    let imageLoaded = false;
+    let imgUrl = null;
 
-              // Création de la carte pour afficher la texture
-              const div = document.createElement("div");
-              div.className = "BlockItem";
-
-              // Détecte si l'élément fait partie des exceptions (pas de bordure)
-              const isException = exceptions.some(e => filename.includes(e));
-              if (isException) {
-                div.classList.add("no-border");
-              }
-
-              div.style.backgroundImage = `url(${url})`;
-
-              // Écoute l'événement de clic pour télécharger l'image
-              div.addEventListener("click", () => {
-                exportBlockImage(url, filename.replace(".png", ""));
-              });
-
-              document.getElementById("blockContainer").appendChild(div);
-            });
-          }
-        });
-      });
+    // Fonction pour charger l'image sélectionnée
+    fileInput.addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          imgUrl = reader.result;
+          blockContainer.style.backgroundImage = `url(${imgUrl})`;
+          blockContainer.style.backgroundSize = "cover";
+          messageDiv.textContent = "Cliquez pour télécharger le rendu!";
+          imageLoaded = true;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
 
     // Fonction pour télécharger l'image en PNG 1080x1080
-    function exportBlockImage(url, filename) {
+    blockContainer.addEventListener("click", () => {
+      if (imageLoaded) {
+        downloadImage();
+      } else {
+        fileInput.click(); // Si aucune image n'est encore chargée, ouvrir l'explorateur de fichiers
+      }
+    });
+
+    function downloadImage() {
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
 
@@ -101,11 +93,11 @@
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         const link = document.createElement("a");
         link.href = canvas.toDataURL("image/png");
-        link.download = filename + ".png";
+        link.download = "render.png";
         link.click();
       };
 
-      img.src = url;
+      img.src = imgUrl;
     }
   </script>
 </body>
