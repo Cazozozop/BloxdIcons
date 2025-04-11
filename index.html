@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Import et Export Image</title>
+  <title>Import et Export Image 3D</title>
   <style>
     body {
       background-color: #3D4B79;
@@ -11,17 +11,39 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 20px;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      color: white;
     }
 
     #blockContainer {
       width: 150px;
       height: 150px;
       background-color: transparent;
-      border: 2px solid black;
       margin-top: 30px;
       position: relative;
       cursor: pointer;
+      border: 3px solid black;
+      border-radius: 10px;
+      transform-style: preserve-3d;
+      transform: perspective(500px) rotateX(20deg) rotateY(20deg);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #blockContainer img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scale(1.1);
+      transition: transform 0.3s ease-in-out;
     }
 
     .hidden-input {
@@ -62,10 +84,15 @@
         const reader = new FileReader();
         reader.onload = () => {
           imgUrl = reader.result;
-          blockContainer.style.backgroundImage = `url(${imgUrl})`;
-          blockContainer.style.backgroundSize = "cover";
-          messageDiv.textContent = "Cliquez pour télécharger le rendu!";
-          imageLoaded = true;
+          const imgElement = document.createElement("img");
+          imgElement.src = imgUrl;
+          imgElement.onload = () => {
+            blockContainer.style.backgroundColor = "transparent"; // Enlever le texte
+            blockContainer.innerHTML = ""; // Effacer le texte
+            blockContainer.appendChild(imgElement); // Ajouter l'image
+            messageDiv.textContent = "Cliquez pour télécharger le rendu!";
+            imageLoaded = true;
+          };
         };
         reader.readAsDataURL(file);
       }
