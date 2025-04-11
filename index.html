@@ -2,107 +2,110 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>BloxdTextures</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Textures Bloxd.io</title>
   <style>
     body {
-      font-family: sans-serif;
-      margin: 0;
       background-color: #3D4B79;
-      color: white;
-      overflow-y: scroll;
-      text-align: center;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
     }
 
     #blockContainer {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      padding: 20px;
-      gap: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 10px;
+      margin-top: 30px;
+      width: 100%;
+      justify-items: center;
     }
 
     .BlockItem {
-      position: relative;
-      width: 64px;
-      height: 64px;
-      transform: rotateX(60deg) rotateZ(45deg);
-      transform-style: preserve-3d;
-      border: 1px solid black;
-      box-shadow: 0 0 0 1px black;
+      width: 100px;
+      height: 100px;
       background-size: cover;
+      background-position: center;
+      transform: translateZ(100px) rotateX(80deg) rotate(45deg);
+      transform-style: preserve-3d;
+      position: relative;
+      padding-bottom: 100%; /* Pour garder un ratio carré */
+      outline: 2px solid transparent; /* Par défaut sans bordure */
+    }
+
+    .BlockItem:hover {
       cursor: pointer;
     }
+
+    /* Si le bloc contient des textures spéciales (glass, lava, etc.), on n'ajoute pas de bordure */
+    .no-border {
+      outline: none;
+    }
+
   </style>
 </head>
 <body>
-  <h1>🧱 BloxdTextures</h1>
-  <p>Cliquer sur un bloc pour le télécharger en rendu 1080x1080.</p>
+  <h1>Textures Bloxd.io</h1>
   <div id="blockContainer"></div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script>
-    // Liste de textures fictives, à remplacer par le vrai contenu du dossier
-    const textures = [
-      "dirt.png",
-      "stone.png",
-      "glass_pane.png",
-      "lava_still.png",
-      "bed_red.png",
-      "trapdoor_wood.png",
-      "water_flow.png",
-      "ice_block.png",
-      "oak_door.png"
-    ];
-
     const exceptions = ["bed", "glass", "trapdoor", "door", "lava", "water", "ice"];
 
-    const container = document.getElementById("blockContainer");
+    // Fonction pour télécharger et extraire le .zip
+    fetch("https://raw.githubusercontent.com/ton-nom-de-compte/ton-repository/branche/textures.zip")
+      .then(res => res.arrayBuffer())
+      .then(buffer => JSZip.loadAsync(buffer))  // Décompression du fichier
+      .then(zip => {
+        Object.keys(zip.files).forEach(filename => {
+          if (filename.endsWith('.png')) {
+            zip.files[filename].async('blob').then(blob => {
+              const url = URL.createObjectURL(blob);
 
-    textures.forEach(name => {
-      const div = document.createElement("div");
-      div.className = "BlockItem";
-      div.style.backgroundImage = `url('textures/${name}')`;
+              // Création de la carte pour afficher la texture
+              const div = document.createElement("div");
+              div.className = "BlockItem";
 
-      div.addEventListener("click", () => {
-        exportBlockImage(`textures/${name}`, name.replace(".png", ""));
+              // Détecte si l'élément fait partie des exceptions (pas de bordure)
+              const isException = exceptions.some(e => filename.includes(e));
+              if (isException) {
+                div.classList.add("no-border");
+              }
+
+              div.style.backgroundImage = `url(${url})`;
+
+              // Écoute l'événement de clic pour télécharger l'image
+              div.addEventListener("click", () => {
+                exportBlockImage(url, filename.replace(".png", ""));
+              });
+
+              document.getElementById("blockContainer").appendChild(div);
+            });
+          }
+        });
       });
 
-      container.appendChild(div);
-    });
+    // Fonction pour télécharger l'image en PNG 1080x1080
+    function exportBlockImage(url, filename) {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
 
-    function exportBlockImage(url, name) {
-      const image = new Image();
-      image.crossOrigin = "anonymous";
-      image.src = url;
-
-      image.onload = () => {
-        const canvas = document.createElement("canvas");
+      const img = new Image();
+      img.onload = () => {
         canvas.width = 1080;
         canvas.height = 1080;
-        const ctx = canvas.getContext("2d");
 
-        ctx.clearRect(0, 0, 1080, 1080);
-
-        // Appliquer transformation isométrique simplifiée
-        ctx.save();
-        ctx.translate(540, 540);
-        ctx.transform(1, -0.5, 1, 0.5, 0, 0);
-        ctx.drawImage(image, -256, -256, 512, 512);
-        ctx.restore();
-
-        // Contour noir sauf exceptions
-        if (!exceptions.some(e => name.includes(e))) {
-          ctx.globalCompositeOperation = 'source-over';
-          ctx.strokeStyle = 'black';
-          ctx.lineWidth = 10;
-          ctx.strokeRect(0, 0, 1080, 1080);
-        }
-
-        const link = document.createElement('a');
-        link.download = name + "_render.png";
-        link.href = canvas.toDataURL();
+        // Dessine l'image avec un ajustement pour qu'elle soit centrée
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const link = document.createElement("a");
+        link.href = canvas.toDataURL("image/png");
+        link.download = filename + ".png";
         link.click();
       };
+
+      img.src = url;
     }
   </script>
 </body>
