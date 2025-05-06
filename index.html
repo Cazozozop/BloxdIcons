@@ -31,8 +31,8 @@
       background-color: transparent;
       background-size: cover;
       background-position: center;
-      border: 10px solid black; /* Contour noir épais */
-      image-rendering: pixelated; /* Empêche l'image d'être floue */
+      border: 10px solid black;
+      image-rendering: pixelated;
     }
 
     .front  { transform: translateZ(75px); }
@@ -67,7 +67,6 @@
     let imgUrl = null;
     let imageLoaded = false;
 
-    // Fonction pour charger l'image sélectionnée
     fileInput.addEventListener("change", (event) => {
       const file = event.target.files[0];
       if (file) {
@@ -77,7 +76,6 @@
           const imgElement = new Image();
           imgElement.src = imgUrl;
           imgElement.onload = () => {
-            // Appliquer l'image sur toutes les faces du cube
             faces.forEach((face) => {
               face.style.backgroundImage = `url(${imgUrl})`;
             });
@@ -88,12 +86,11 @@
       }
     });
 
-    // Fonction pour télécharger le rendu du cube
     blockContainer.addEventListener("click", () => {
       if (imageLoaded) {
         downloadImage();
       } else {
-        fileInput.click(); // Si aucune image n'est encore chargée, ouvrir l'explorateur de fichiers
+        fileInput.click();
       }
     });
 
@@ -101,28 +98,20 @@
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
 
-      canvas.width = 1080;
-      canvas.height = 1080;
+      canvas.width = 1024;
+      canvas.height = 1024;
 
-      // Créer une vue isométrique du cube
       const img = new Image();
       img.onload = () => {
-        // Appliquer une vue isométrique simple sur le canvas
-        ctx.save();
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.rotate(Math.PI / 4); // Vue isométrique
+        // Désactiver le lissage
+        ctx.imageSmoothingEnabled = false;
 
-        // Appliquer l'image sur chaque face du cube dans l'orientation isométrique
-        ctx.drawImage(img, -75, -75, 150, 150); // Face avant
-        ctx.drawImage(img, -75, -75, 150, 150); // Face haut
-        ctx.drawImage(img, -75, -75, 150, 150); // Face droite
+        // Dessiner l’image centrée et étirée à 1024x1024
+        ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, 1024, 1024);
 
-        ctx.restore();
-
-        // Créer un lien pour télécharger l'image
         const link = document.createElement("a");
         link.href = canvas.toDataURL("image/png");
-        link.download = "render_cube.png";
+        link.download = "render_cube_1024.png";
         link.click();
       };
 
