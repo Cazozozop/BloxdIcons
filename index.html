@@ -9,7 +9,7 @@
       background-color: #3D4B79;
       font-family: Arial, sans-serif;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
       gap: 20px;
       min-height: 100vh;
@@ -43,10 +43,7 @@
     .top    { transform: rotateX(90deg) translateZ(75px); }
     .bottom { transform: rotateX(-90deg) translateZ(75px); }
 
-    #fileInput {
-      display: none;
-    }
-
+    #fileInput { display: none; }
     #downloadBtn {
       padding: 10px 20px;
       font-size: 16px;
@@ -57,104 +54,121 @@
       cursor: pointer;
       font-weight: bold;
     }
+    #downloadBtn:hover { background-color: #ddd; }
 
-    #downloadBtn:hover {
-      background-color: #ddd;
-    }
-
-    canvas {
-      display: none;
-    }
+    canvas { display: none; }
   </style>
 </head>
 <body>
-
+  <h1>Render Bloc 3D</h1>
   <div id="blockContainer">
     <div class="cube-face front"></div>
-    <div class="cube-face back"></div>
     <div class="cube-face right"></div>
-    <div class="cube-face left"></div>
     <div class="cube-face top"></div>
-    <div class="cube-face bottom"></div>
     <input type="file" id="fileInput" accept="image/*">
   </div>
-
   <button id="downloadBtn">Télécharger le cube</button>
   <canvas id="renderCanvas" width="1024" height="1024"></canvas>
 
   <script>
-    const fileInput = document.getElementById("fileInput");
-    const faces = document.querySelectorAll(".cube-face");
-    const downloadBtn = document.getElementById("downloadBtn");
-    const canvas = document.getElementById("renderCanvas");
-    const ctx = canvas.getContext("2d");
-
-    let img = new Image();
+    const fileInput = document.getElementById('fileInput');
+    const faces = document.querySelectorAll('.cube-face');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const canvas = document.getElementById('renderCanvas');
+    const ctx = canvas.getContext('2d');
+    let textureImage = new Image();
     let imgLoaded = false;
 
-    fileInput.addEventListener("change", e => {
-      const file = e.target.files[0];
-      if (!file) return;
+    fileInput.addEventListener('change', e => {
+      const file = e.target.files[0]; if(!file) return;
       const reader = new FileReader();
       reader.onload = () => {
-        img = new Image();
-        img.src = reader.result;
-        img.onload = () => {
-          // redimensionner en 1024x1024 pour éviter le flou
+        const newImg = new Image();
+        newImg.src = reader.result;
+        newImg.onload = () => {
+          // resize to 1024x1024 pixelated
           const temp = document.createElement('canvas');
-          temp.width = 1024;
-          temp.height = 1024;
+          temp.width = 1024; temp.height = 1024;
           const tctx = temp.getContext('2d');
           tctx.imageSmoothingEnabled = false;
-          tctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, 1024, 1024);
-          img.src = temp.toDataURL();
-          // appliquer texture
-          faces.forEach(f => f.style.backgroundImage = `url(${img.src})`);
-          imgLoaded = true;
+          tctx.drawImage(newImg, 0,0,newImg.width,newImg.height, 0,0,1024,1024);
+          textureImage = new Image();
+          textureImage.src = temp.toDataURL();
+          textureImage.onload = () => {
+            faces.forEach(f => f.style.backgroundImage = `url(${textureImage.src})`);
+            imgLoaded = true;
+          };
         };
       };
       reader.readAsDataURL(file);
     });
 
-    downloadBtn.addEventListener("click", () => {
-      if (!imgLoaded) { alert('Charge une image d\u00e9j\u00e0'); return; }
+    downloadBtn.addEventListener('click', () => {
+      if (!imgLoaded) { alert('Charge une texture d\u00e9j\u00e0'); return; }
       ctx.clearRect(0,0,1024,1024);
       ctx.imageSmoothingEnabled = false;
-      const size = 600;
-      const half = size/2;
-      const offsetX = 512;
-      const offsetY = 512 - 50;
-      // face front
+      // cube parameters
+      const faceSize = 400;
+      const half = faceSize/2;
+      const centerX = 512;
+      const centerY = 512;
+      const angle = Math.PI/6; // 30deg for isometric
+
+      // draw top face
       ctx.save();
-      ctx.translate(offsetX, offsetY);
-      ctx.rotate(Math.PI/4);
-      ctx.translate(-half, -half);
-      ctx.drawImage(img, 0, 0, 1024, 1024, 0, 0, size, size);
+      ctx.translate(centerX, centerY - half*0.5);
+      ctx.rotate(-angle);
+      ctx.beginPath();
+      ctx.moveTo(-half, 0);
+      ctx.lineTo(0, -half);
+      ctx.lineTo(half, 0);
+      ctx.lineTo(0, half);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(textureImage, -half, -half, faceSize, faceSize);
+      ctx.strokeStyle = 'black'; ctx.lineWidth = 8;
+      ctx.stroke();
       ctx.restore();
-      // face right
+
+      // draw left face
       ctx.save();
-      ctx.translate(offsetX, offsetY);
-      ctx.transform(1, 0, 0.5, 1, 0, 0);
-      ctx.rotate(Math.PI/4);
-      ctx.translate(-half, -half);
-      ctx.drawImage(img, 0, 0, 1024, 1024, 0, 0, size, size);
+      ctx.translate(centerX - half*0.866, centerY + half*0.5);
+      ctx.rotate(angle + Math.PI/2);
+      ctx.beginPath();
+      ctx.moveTo(-half, 0);
+      ctx.lineTo(0, -half);
+      ctx.lineTo(half, 0);
+      ctx.lineTo(0, half);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(textureImage, -half, -half, faceSize, faceSize);
+      ctx.strokeStyle = 'black'; ctx.lineWidth = 8;
+      ctx.stroke();
       ctx.restore();
-      // face top
+
+      // draw right face
       ctx.save();
-      ctx.translate(offsetX, offsetY);
-      ctx.transform(1, -0.5, 0, 1, 0, 0);
-      ctx.rotate(Math.PI/4);
-      ctx.translate(-half, -half);
-      ctx.drawImage(img, 0, 0, 1024, 1024, 0, 0, size, size);
+      ctx.translate(centerX + half*0.866, centerY + half*0.5);
+      ctx.rotate(angle - Math.PI/2);
+      ctx.beginPath();
+      ctx.moveTo(-half, 0);
+      ctx.lineTo(0, -half);
+      ctx.lineTo(half, 0);
+      ctx.lineTo(0, half);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(textureImage, -half, -half, faceSize, faceSize);
+      ctx.strokeStyle = 'black'; ctx.lineWidth = 8;
+      ctx.stroke();
       ctx.restore();
-      // télécharger
+
+      // download
       const a = document.createElement('a');
       a.href = canvas.toDataURL('image/png');
       a.download = 'cube_render_3d.png';
       a.click();
     });
 
-    // clic initial sur cube pour charger image
     document.getElementById('blockContainer').addEventListener('click', () => {
       if (!imgLoaded) fileInput.click();
     });
