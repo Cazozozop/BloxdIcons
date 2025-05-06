@@ -79,66 +79,84 @@
     <input type="file" id="fileInput" accept="image/*">
   </div>
 
-  <button id="downloadBtn">Télécharger</button>
-
+  <button id="downloadBtn">Télécharger le cube</button>
   <canvas id="renderCanvas" width="1024" height="1024"></canvas>
 
   <script>
-    const blockContainer = document.getElementById("blockContainer");
     const fileInput = document.getElementById("fileInput");
     const faces = document.querySelectorAll(".cube-face");
     const downloadBtn = document.getElementById("downloadBtn");
     const canvas = document.getElementById("renderCanvas");
     const ctx = canvas.getContext("2d");
 
-    let imgUrl = null;
-    let imageLoaded = false;
+    let img = new Image();
+    let imgLoaded = false;
 
-    fileInput.addEventListener("change", (event) => {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          imgUrl = reader.result;
-          const imgElement = new Image();
-          imgElement.src = imgUrl;
-          imgElement.onload = () => {
-            faces.forEach((face) => {
-              face.style.backgroundImage = `url(${imgUrl})`;
-            });
-            imageLoaded = true;
-          };
+    fileInput.addEventListener("change", e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        img = new Image();
+        img.src = reader.result;
+        img.onload = () => {
+          // redimensionner en 1024x1024 pour éviter le flou
+          const temp = document.createElement('canvas');
+          temp.width = 1024;
+          temp.height = 1024;
+          const tctx = temp.getContext('2d');
+          tctx.imageSmoothingEnabled = false;
+          tctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, 1024, 1024);
+          img.src = temp.toDataURL();
+          // appliquer texture
+          faces.forEach(f => f.style.backgroundImage = `url(${img.src})`);
+          imgLoaded = true;
         };
-        reader.readAsDataURL(file);
-      }
-    });
-
-    blockContainer.addEventListener("click", () => {
-      if (!imageLoaded) {
-        fileInput.click();
-      }
+      };
+      reader.readAsDataURL(file);
     });
 
     downloadBtn.addEventListener("click", () => {
-      if (!imageLoaded) {
-        alert("Charge une image d'abord !");
-        return;
-      }
+      if (!imgLoaded) { alert('Charge une image d\u00e9j\u00e0'); return; }
+      ctx.clearRect(0,0,1024,1024);
+      ctx.imageSmoothingEnabled = false;
+      const size = 600;
+      const half = size/2;
+      const offsetX = 512;
+      const offsetY = 512 - 50;
+      // face front
+      ctx.save();
+      ctx.translate(offsetX, offsetY);
+      ctx.rotate(Math.PI/4);
+      ctx.translate(-half, -half);
+      ctx.drawImage(img, 0, 0, 1024, 1024, 0, 0, size, size);
+      ctx.restore();
+      // face right
+      ctx.save();
+      ctx.translate(offsetX, offsetY);
+      ctx.transform(1, 0, 0.5, 1, 0, 0);
+      ctx.rotate(Math.PI/4);
+      ctx.translate(-half, -half);
+      ctx.drawImage(img, 0, 0, 1024, 1024, 0, 0, size, size);
+      ctx.restore();
+      // face top
+      ctx.save();
+      ctx.translate(offsetX, offsetY);
+      ctx.transform(1, -0.5, 0, 1, 0, 0);
+      ctx.rotate(Math.PI/4);
+      ctx.translate(-half, -half);
+      ctx.drawImage(img, 0, 0, 1024, 1024, 0, 0, size, size);
+      ctx.restore();
+      // télécharger
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = 'cube_render_3d.png';
+      a.click();
+    });
 
-      const img = new Image();
-      img.onload = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.imageSmoothingEnabled = false;
-
-        // Dessiner l'image agrandie en 1024x1024 sans flou
-        ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, 1024, 1024);
-
-        const link = document.createElement("a");
-        link.href = canvas.toDataURL("image/png");
-        link.download = "render_bloc.png";
-        link.click();
-      };
-      img.src = imgUrl;
+    // clic initial sur cube pour charger image
+    document.getElementById('blockContainer').addEventListener('click', () => {
+      if (!imgLoaded) fileInput.click();
     });
   </script>
 </body>
